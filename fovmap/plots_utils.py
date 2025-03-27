@@ -227,8 +227,6 @@ def plot_cone(x, y, z, fig=None, ax=None):
     if fig is None or ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(x, y, z, color='gray', alpha=0.25)
     max_dist = max(x.max(), y.max(), z.max())
     # ignore nan values
