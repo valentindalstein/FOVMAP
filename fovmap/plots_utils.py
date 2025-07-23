@@ -36,6 +36,52 @@ def ele_azim_from_vector_for_plot(vector):
     return elevation, azimuth
 
 
+def plot_everything(
+    current,
+    already_labeled,
+    to_be_labeled,
+    result,
+    colors
+    ):
+    to_be_labeled_copy = to_be_labeled.copy()
+    # make sure no overlapping points
+    for point in already_labeled:
+        if point in to_be_labeled_copy:
+            to_be_labeled_copy.remove(point)
+    to_be_labeled_copy.remove(current)
+
+    # create the figure
+    fig = plt.gcf()
+    canvas = fig.canvas
+    # get the Qt window object and set it to fullscreen
+    canvas.manager.window.showFullScreen()
+    fig.canvas.mpl_connect('key_press_event', on_key)  # close with enter
+
+    # create the 3D plot set the axis properly
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    ax.set_zlim(-1, 1)
+    ax.set_aspect('equal')
+
+    # plot the points if list not empty
+    if to_be_labeled_copy:
+        ax.scatter(*zip(*to_be_labeled_copy), color="#787878", s=SMALL_SIZE, alpha=1)
+    if already_labeled:
+        for point in already_labeled:
+            label = result[str(point)]
+            color = colors[label]
+            ax.scatter(*point, color=color, s=MEDIUM_SIZE, alpha=1)
+    ax.scatter(*current, color=SEL_COLOR, s=BIG_SIZE, alpha=1)
+    # Adjust view to face the given vector
+    set_view_from_vector(ax, current)
+    # block until enter pressed
+    plt.show(block=True)
+
+
 def plot_candidates(
    current,
    candidates,
@@ -245,13 +291,15 @@ def plot_cone(x, y, z, fig=None, ax=None):
     return fig, ax
 
 
-def plot_cone_vert(cone_x, cone_y, cone_z, vertices, fig=None, ax=None):
+def plot_cone_vert(cone_x, cone_y, cone_z, vertices, title=None, plot_left=False, fig=None, ax=None):
     if fig is None or ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(cone_x, cone_y, cone_z, color='gray', alpha=0.25, label='Cone')
     ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2], color='r', s=3, label='Right Eye')
-    ax.scatter(vertices[:, 0], -vertices[:, 1], vertices[:, 2], color='y', s=3, label='Left Eye')
+    if plot_left:
+        # Plot left eye vertices
+        ax.scatter(vertices[:, 0], -vertices[:, 1], vertices[:, 2], color='y', s=3, label='Left Eye')
     ax.set_box_aspect([1, 1, 1])
     # ignore nan values
     max_dist = max(np.nanmax(cone_x), np.nanmax(cone_y), np.nanmax(cone_z))
@@ -261,8 +309,14 @@ def plot_cone_vert(cone_x, cone_y, cone_z, vertices, fig=None, ax=None):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    ax.legend(["Cone", "Right Eye", "Left Eye"])
-    ax.set_title('Intersection of Lens Directions and Cone')
+    legend_list = ["Cone", "Right Eye"]
+    if plot_left:
+        legend_list.append("Left Eye")
+    ax.legend(legend_list)
+    if title:
+        ax.set_title(title)
+    else:
+        ax.set_title('Intersection of Lens Directions and Cone')
     # Set the view angle
     ax.view_init(elev=30, azim=180, roll=0)
     return fig, ax

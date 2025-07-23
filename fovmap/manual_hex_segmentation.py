@@ -1,6 +1,6 @@
 import numpy as np
 
-from fovmap.plots_utils import plot_candidates, plot_candidates_and_selected
+from fovmap.plots_utils import plot_candidates, plot_candidates_and_selected, plot_everything
 
 
 def angle_threshold_input():
@@ -301,3 +301,33 @@ def manual_hex_segmentation(
             n_center,
             ommatidia_hex_grid
             )
+
+
+def manual_labeling(
+   results,
+   already_labeled,
+   to_be_labeled,
+   labels,
+   colors
+   ):
+    while len(to_be_labeled) != 0:
+        current_cp = to_be_labeled[0]  # get the first point to be labeled
+        plot_everything(
+            current_cp,
+            already_labeled,
+            to_be_labeled,
+            results,
+            colors
+            )
+        not_valid_input = True
+        while not_valid_input:
+            selected_label_int = input(f"Enter the label index for the current point {labels}")
+            try:
+                selected_label = int(selected_label_int)
+                not_valid_input = False
+            except ValueError:
+                print("Please enter a valid integer")
+        results[str(current_cp)] = labels[selected_label]
+        already_labeled.append(current_cp)
+        to_be_labeled.remove(current_cp)
+    return results, already_labeled, to_be_labeled
